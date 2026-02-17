@@ -1,0 +1,22 @@
+# Environment
+.env
+
+# Python
+__pycache__/
+*.pyc
+*.egg-info/
+dist/
+build/
+
+# Output
+output/
+
+# SQLite
+*.db
+
+# Venv
+.venv/
+
+# IDE
+.vscode/
+.idea/

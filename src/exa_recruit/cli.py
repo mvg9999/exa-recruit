@@ -363,7 +363,7 @@ app.add_typer(config_app, name="config")
 @config_app.command("show")
 def config_show() -> None:
     """Show current configuration (API keys redacted)."""
-    from .config import get_anthropic_key
+    from .config import get_openrouter_key
 
     try:
         key = get_api_key()
@@ -373,11 +373,11 @@ def config_show() -> None:
         console.print("[red]EXA_API_KEY: not set[/red]")
 
     try:
-        key = get_anthropic_key()
+        key = get_openrouter_key()
         redacted = key[:8] + "..." + key[-4:]
-        console.print(f"ANTHROPIC_API_KEY: {redacted}")
+        console.print(f"OPENROUTER_API_KEY: {redacted}")
     except SystemExit:
-        console.print("[red]ANTHROPIC_API_KEY: not set (required for filtering)[/red]")
+        console.print("[red]OPENROUTER_API_KEY: not set (required for filtering)[/red]")
 
 
 @config_app.command("test")

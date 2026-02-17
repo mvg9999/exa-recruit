@@ -33,15 +33,15 @@ def get_api_key() -> str:
     return key
 
 
-def get_anthropic_key() -> str:
-    """Load and return the Anthropic API key for LLM filtering."""
+def get_openrouter_key() -> str:
+    """Load and return the OpenRouter API key for LLM filtering."""
     env_file = find_env_file()
     if env_file:
         load_dotenv(env_file)
 
-    key = os.environ.get("ANTHROPIC_API_KEY", "")
+    key = os.environ.get("OPENROUTER_API_KEY", "")
     if not key:
-        print("Error: ANTHROPIC_API_KEY not found. Set it in .env or as an environment variable.", file=sys.stderr)
+        print("Error: OPENROUTER_API_KEY not found. Set it in .env or as an environment variable.", file=sys.stderr)
         print("This key is required for LLM-based candidate filtering.", file=sys.stderr)
         raise SystemExit(2)
     return key

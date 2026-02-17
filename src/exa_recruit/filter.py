@@ -1,4 +1,4 @@
-"""LLM-based post-retrieval filtering using Claude Haiku 4.5."""
+"""LLM-based post-retrieval filtering using Claude Haiku 4.5 via OpenRouter."""
 
 from __future__ import annotations
 
@@ -7,7 +7,7 @@ import json
 import os
 from dataclasses import dataclass
 
-import anthropic
+import openai
 
 from .searcher import PersonResult
 
@@ -38,9 +38,9 @@ Respond with ONLY this JSON (no markdown, no explanation):
 {{"match": true, "confidence": 0.95, "reason": "one sentence", "current_company": "extracted company name or null", "current_role": "extracted role or null", "graduation_year": "extracted year or null"}}"""
 
 
-def _get_anthropic_key() -> str:
-    """Get the Anthropic API key from environment or .env file."""
-    key = os.environ.get("ANTHROPIC_API_KEY", "")
+def _get_openrouter_key() -> str:
+    """Get the OpenRouter API key from environment or .env file."""
+    key = os.environ.get("OPENROUTER_API_KEY", "")
     if key:
         return key
     # Try loading from .env via dotenv (already loaded by config module)
@@ -49,11 +49,11 @@ def _get_anthropic_key() -> str:
     for env_path in [Path.cwd() / ".env", Path(__file__).parent.parent.parent / ".env"]:
         if env_path.exists():
             load_dotenv(env_path)
-            key = os.environ.get("ANTHROPIC_API_KEY", "")
+            key = os.environ.get("OPENROUTER_API_KEY", "")
             if key:
                 return key
     raise RuntimeError(
-        "ANTHROPIC_API_KEY not found. Set it in .env or as an environment variable."
+        "OPENROUTER_API_KEY not found. Set it in .env or as an environment variable."
     )
 
 
@@ -120,7 +120,7 @@ def _parse_response(text: str) -> FilterResult:
 
 
 async def _classify_one(
-    client: anthropic.AsyncAnthropic,
+    client: openai.AsyncOpenAI,
     person: PersonResult,
     query: str,
     filter_config: dict | None,
@@ -133,15 +133,15 @@ async def _classify_one(
     async with semaphore:
         for attempt in range(max_retries):
             try:
-                response = await client.messages.create(
-                    model="claude-haiku-4-5-20251001",
+                response = await client.chat.completions.create(
+                    model="anthropic/claude-haiku-4.5",
                     max_tokens=200,
                     messages=[{"role": "user", "content": prompt}],
                 )
-                text = response.content[0].text
+                text = response.choices[0].message.content
                 result = _parse_response(text)
                 return person, result
-            except anthropic.RateLimitError:
+            except openai.RateLimitError:
                 if attempt < max_retries - 1:
                     await asyncio.sleep(2 ** attempt)
                 else:
@@ -170,8 +170,11 @@ async def filter_candidates_async(
 
     Returns (matched, rejected) tuples of (PersonResult, FilterResult).
     """
-    api_key = _get_anthropic_key()
-    client = anthropic.AsyncAnthropic(api_key=api_key)
+    api_key = _get_openrouter_key()
+    client = openai.AsyncOpenAI(
+        api_key=api_key,
+        base_url="https://openrouter.ai/api/v1",
+    )
     semaphore = asyncio.Semaphore(concurrency)
 
     tasks = [
